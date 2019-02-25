@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Calculate money required to execute big orders on Luno",
   "main": "index.js",
+  "bin": "index.js",
   "dependencies": {
     "bignumber.js": "^8.1.1",
     "bitx": "^1.5.1",
-    "debug": "^3.1.0",
     "table": "^5.2.3"
   },
   "devDependencies": {},

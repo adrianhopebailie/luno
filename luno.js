@@ -1,16 +1,13 @@
 const { table } = require('table')
 const BigNumber = require('bignumber.js')
-const debug = require('debug')('luno')
 const BitX = require('./bitx-async.js')
 
 BigNumber.config({ DECIMAL_PLACES: 8 })
 
-const LUNO_KEY = process.env.LUNO_KEY || "bd6vcxud3euma"
-const LUNO_SECRET = process.env.LUNO_SECRET || "bzZrd__HPdKSTZK6Xim0ZMzZb4GnszeO7nxt81lxb0Y"
 const LUNO_BTC_RECEIVE_FEE = 0.00002
 const LUNO_ZAR_WITHDRAW_FEE = 8.50
-const LUNO_TAKER_FEE = process.env.LUNO_TAKER_FEE || 0.0075
-const lunoClient = new BitX(LUNO_KEY, LUNO_SECRET)
+const LUNO_TAKER_FEE = process.env.LUNO_TAKER_FEE || 0.01
+const lunoClient = new BitX()
 
 const tableConfig = {
   columns: {
