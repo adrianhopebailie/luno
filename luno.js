@@ -1,13 +1,12 @@
+const https = require('https')
 const { table } = require('table')
 const BigNumber = require('bignumber.js')
-const BitX = require('./bitx-async.js')
 
 BigNumber.config({ DECIMAL_PLACES: 8 })
 
 const LUNO_BTC_RECEIVE_FEE = 0.00002
 const LUNO_ZAR_WITHDRAW_FEE = 8.50
 const LUNO_TAKER_FEE = process.env.LUNO_TAKER_FEE || 0.01
-const lunoClient = new BitX()
 
 const tableConfig = {
   columns: {
@@ -57,10 +56,10 @@ async function getBtcRequiredForZar(zarRequired) {
   let totalZarReceivedAfterTakerFee = new BigNumber(0);
   let zarRequiredBeforeWithdrawalFee = zarRequired.plus(LUNO_ZAR_WITHDRAW_FEE)
 
-  console.log(`-> To withdraw ${zarRequired} ZAR, ${zarRequiredBeforeWithdrawalFee} must be earned to accommodate ${LUNO_ZAR_WITHDRAW_FEE} withdrawal fee.`)
+  console.log(`To withdraw ${zarRequired} ZAR, ${zarRequiredBeforeWithdrawalFee} must be earned to accommodate ${LUNO_ZAR_WITHDRAW_FEE} withdrawal fee.`)
 
   console.log(`Getting order book...`)
-  const orderBook = await lunoClient.getOrderBook()
+  const orderBook = await getOrderBook()
   console.log(`Got order book ${orderBook.timestamp}`)
 
   const sales = [[
@@ -125,6 +124,46 @@ async function getBtcRequiredForZar(zarRequired) {
   console.log(` - This will earn ${totalZarReceivedAfterTakerFee} ZAR after paying a fee of ${LUNO_TAKER_FEE} per tx.`)
   console.log(`A WITHDRAWAL of ${zarRequired} ZAR can then be made after the withdrawal fee`)
   return totalBtcSold.plus(LUNO_BTC_RECEIVE_FEE)
+}
+
+async function getOrderBook () {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Charset': 'utf-8'
+      },
+      hostname: 'api.mybitx.com',
+      path: '/api/1/orderbook?pair=XBTZAR',
+      port: 443,
+      method: 'GET'
+    })
+    req.on('response', function (res) {
+      let response = ''
+      res.setEncoding('utf8')
+      res.on('data', function (data) {
+        response += data
+      })
+      res.on('end', function () {
+        if (res.statusCode !== 200) {
+          return reject(new Error('Luno error ' + res.statusCode + ': ' + response))
+        }
+        try {
+          response = JSON.parse(response)
+        } catch (err) {
+          return reject(err)
+        }
+        if (response.error) {
+          return reject(new Error(response.error))
+        }
+        return resolve(response)
+      })
+    })  
+    req.on('error', function (err) {
+      reject(err)
+    })  
+    req.end()
+  })
 }
 
 module.exports.getBtcRequiredForZar = getBtcRequiredForZar
